@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大白课堂 - 在线课件</title>
+    <script src="config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .course-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        
+        .course-thumbnail {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+        }
+        
+        .course-info {
+            padding: 1.5rem;
+        }
+        
+        .course-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+        
+        .course-desc {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+        
+        .course-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #999;
+        }
+        
+        .course-tag {
+            background: #f0f0f0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #999;
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎓 大白课堂</h1>
+        <p>在线课件学习平台</p>
+    </div>
+    
+    <div class="container">
+        <div id="courseList" class="course-grid">
+            <div class="loading">正在加载课件...</div>
+        </div>
+    </div>
+
+    <script>
+        // 课件列表数据
+        let courses = [];
+        
+        // 从后端加载课件列表
+        async function loadCourses() {
+            const container = document.getElementById('courseList');
+            container.innerHTML = '<div class="loading">正在加载课件...</div>';
+            
+            try {
+                const response = await fetch('/classroom/api/courses');
+                const data = await response.json();
+                
+                if (data.success && data.courses && data.courses.length > 0) {
+                    courses = data.courses;
+                    renderCourses();
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1 / -1;">
+                            <div class="empty-state-icon">📭</div>
+                            <h3>暂无课件</h3>
+                            <p>请上传课件或联系教师</p>
+                            <a href="upload.html" style="display:inline-block; margin-top:1rem; padding:0.75rem 1.5rem; background:#6366f1; color:white; text-decoration:none; border-radius:8px;">上传课件</a>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('加载课件失败:', error);
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h3>加载失败</h3>
+                        <p>请稍后重试</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染课件列表
+        function renderCourses() {
+            const container = document.getElementById('courseList');
+            
+            if (courses.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="empty-state-icon">📭</div>
+                        <h3>暂无课件</h3>
+                        <p>请上传课件或联系教师</p>
+                        <a href="upload.html" style="display:inline-block; margin-top:1rem; padding:0.75rem 1.5rem; background:#6366f1; color:white; text-decoration:none; border-radius:8px;">上传课件</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = courses.map(course => `
+                <div class="course-card" onclick="openCourse('${course.id}')">
+                    <div class="course-thumbnail">📖</div>
+                    <div class="course-info">
+                        <div class="course-title">${course.title}</div>
+                        <div class="course-desc">${course.description || course.manifest_title || '暂无描述'}</div>
+                        <div class="course-meta">
+                            <span>${course.scene_count || 0} 个场景</span>
+                            <span>
+                                ${course.interactive_count > 0 ? '<span class="course-tag">互动</span>' : ''}
+                                ${course.audio_count > 0 ? '<span class="course-tag">语音</span>' : ''}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function openCourse(courseId) {
+            window.location.href = `${config.OPENMAIC_URL}/open?course=${courseId}`;
+        }
+        
+        // 页面加载时加载课件列表
+        document.addEventListener('DOMContentLoaded', loadCourses);
+    </script>
+</body>
+</html>

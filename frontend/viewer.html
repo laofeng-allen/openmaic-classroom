@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课件播放 - 大白课堂</title>
+    <script src="config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        /* 左侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: #1e293b;
+            border-right: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid #334155;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        .scene-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        
+        .scene-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+            border: 2px solid transparent;
+        }
+        
+        .scene-item:hover {
+            background: #334155;
+        }
+        
+        .scene-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: #6366f1;
+        }
+        
+        .scene-number {
+            width: 28px;
+            height: 28px;
+            background: #475569;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+            color: #94a3b8;
+        }
+        
+        .scene-item.active .scene-number {
+            background: #6366f1;
+            color: white;
+        }
+        
+        .scene-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .scene-title {
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0.2rem;
+        }
+        
+        .scene-type {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        
+        /* 主内容区 */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+        
+        /* 顶部标题栏 */
+        .header {
+            height: 60px;
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-btn:hover {
+            background: #334155;
+            color: #e2e8f0;
+        }
+        
+        .header-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .scene-counter {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        
+        /* 幻灯片展示区域 */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .slide-wrapper {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+            max-height: 100%;
+            position: relative;
+        }
+        
+        .slide-content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .slide-content.interactive-mode {
+            background: white;
+        }
+        
+        .slide-content.interactive-mode iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* 底部控制栏 */
+        .controls {
+            height: 64px;
+            background: #1e293b;
+            border-top: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 0 2rem;
+            flex-shrink: 0;
+        }
+        
+        .control-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        
+        .control-btn:hover {
+            background: #334155;
+            color: #e2e8f0;
+        }
+        
+        .control-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .control-btn.play-btn {
+            background: #6366f1;
+            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+        }
+        
+        .control-btn.play-btn:hover {
+            background: #818cf8;
+        }
+        
+        .progress-section {
+            flex: 1;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #6366f1;
+            border-radius: 3px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+        
+        .time-display {
+            font-size: 0.8rem;
+            color: #64748b;
+            white-space: nowrap;
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .volume-slider {
+            width: 80px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #334155;
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #6366f1;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #64748b;
+            gap: 1rem;
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+        }
+        
+        /* 错误状态 */
+        .error-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #ef4444;
+            gap: 1rem;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .canvas-area {
+                padding: 1rem;
+            }
+            
+            .controls {
+                padding: 0 1rem;
+                gap: 0.75rem;
+            }
+            
+            .progress-section {
+                max-width: 200px;
+            }
+        }
+        
+        /* 滚动条样式 */
+        .scene-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .scene-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .scene-list::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        
+        .scene-list::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧场景列表 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            课件目录
+        </div>
+        <div class="scene-list" id="sceneList">
+            <!-- 动态生成 -->
+        </div>
+    </div>
+    
+    <!-- 主内容区 -->
+    <div class="main-area">
+        <!-- 顶部标题栏 -->
+        <div class="header">
+            <div class="header-left">
+                <a href="index.html" class="back-btn">←</a>
+                <span class="header-title" id="courseTitle">加载中...</span>
+            </div>
+            <div class="header-right">
+                <span class="scene-counter" id="sceneCounter">- / -</span>
+            </div>
+        </div>
+        
+        <!-- 幻灯片展示区域 -->
+        <div class="canvas-area" id="canvasArea">
+            <div class="slide-wrapper" id="slideWrapper">
+                <div class="slide-content" id="slideContent">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📖</div>
+                        <div>正在加载课件...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部控制栏 -->
+        <div class="controls">
+            <button class="control-btn" id="prevBtn" onclick="prevScene()" title="上一页">‹</button>
+            <button class="control-btn play-btn" id="playBtn" onclick="togglePlay()" title="播放/暂停">▶</button>
+            <button class="control-btn" id="nextBtn" onclick="nextScene()" title="下一页">›</button>
+            
+            <div class="progress-section">
+                <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+                <div class="progress-bar" id="progressBarContainer">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+            </div>
+            
+            <div class="volume-control">
+                <button class="control-btn" id="muteBtn" onclick="toggleMute()" title="静音">🔊</button>
+                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80" onchange="setVolume(this.value)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let courseData = null;
+        let currentScene = 0;
+        let scenes = [];
+        let audioPlayer = null;
+        let isPlaying = false;
+        let isMuted = false;
+        let currentAudioFile = null;
+        
+        // 初始化
+        async function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const courseId = urlParams.get('course');
+            
+            if (!courseId) {
+                showCourseListPrompt();
+                return;
+            }
+            
+            try {
+                const response = await fetch(`courses/${courseId}/manifest.json`);
+                if (!response.ok) throw new Error('课件不存在');
+                
+                courseData = await response.json();
+                document.getElementById('courseTitle').textContent = courseData.stage.name;
+                
+                scenes = courseData.scenes || [];
+                renderSceneList();
+                loadScene(0);
+            } catch (error) {
+                showError('加载课件失败: ' + error.message);
+            }
+        }
+        
+        // 显示课程列表提示
+        function showCourseListPrompt() {
+            document.getElementById('slideContent').innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:#0f172a; color:#94a3b8; padding:2rem; text-align:center;">
+                    <div style="font-size:4rem; margin-bottom:1rem;">📚</div>
+                    <h2 style="color:#e2e8f0; margin-bottom:0.5rem;">大白课堂</h2>
+                    <p>请从课件列表选择课程</p>
+                    <a href="index.html" style="margin-top:1.5rem; padding:0.75rem 1.5rem; background:#6366f1; color:white; text-decoration:none; border-radius:8px; font-weight:500;">查看课件列表</a>
+                </div>
+            `;
+            document.getElementById('sceneList').innerHTML = '<div style="padding:1rem; color:#64748b; text-align:center;">请选择课件</div>';
+            document.getElementById('courseTitle').textContent = '大白课堂';
+            document.getElementById('sceneCounter').textContent = '-';
+        }
+        
+        // 渲染场景列表
+        function renderSceneList() {
+            const container = document.getElementById('sceneList');
+            container.innerHTML = scenes.map((scene, index) => {
+                const typeLabel = scene.type === 'slide' ? '幻灯片' : 
+                                  scene.type === 'interactive' ? '互动' : 
+                                  scene.type === 'quiz' ? '测验' : '幻灯片';
+                
+                return `
+                    <div class="scene-item ${index === currentScene ? 'active' : ''}" onclick="goToScene(${index})">
+                        <div class="scene-number">${index + 1}</div>
+                        <div class="scene-info">
+                            <div class="scene-title">${scene.title || '未命名'}</div>
+                            <div class="scene-type">${typeLabel}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // 加载指定场景
+        function loadScene(index) {
+            if (index < 0 || index >= scenes.length) return;
+            
+            currentScene = index;
+            const scene = scenes[index];
+            const container = document.getElementById('slideContent');
+            
+            document.getElementById('prevBtn').disabled = index === 0;
+            document.getElementById('nextBtn').disabled = index === scenes.length - 1;
+            
+            updateProgress(index);
+            
+            // 先渲染场景，再预加载音频
+            if (scene.type === 'slide') {
+                container.innerHTML = renderSlide(scene);
+            } else if (scene.type === 'interactive') {
+                container.innerHTML = renderInteractive(scene);
+            } else if (scene.type === 'quiz') {
+                container.innerHTML = renderQuiz(scene);
+            }
+            
+            // 预加载音频
+            preloadAudio(scene);
+            
+            renderSceneList();
+            
+            if (isPlaying) {
+                playCurrentAudio();
+            }
+        }
+        
+        // 渲染幻灯片
+        function renderSlide(scene) {
+            const canvas = scene.content?.canvas;
+            if (!canvas) return '<div class="error-state">幻灯片数据错误</div>';
+            
+            const viewportSize = canvas.viewportSize || 1000;
+            const viewportRatio = canvas.viewportRatio || 0.5625;
+            const height = viewportSize * viewportRatio;
+            
+            let elementsHtml = '';
+            if (canvas.elements) {
+                elementsHtml = canvas.elements.map(el => {
+                    if (el.type === 'text') {
+                        return `<div style="position:absolute; left:${el.left}px; top:${el.top}px; width:${el.width}px; height:${el.height}px; overflow:hidden; font-family:'Microsoft YaHei', sans-serif;">${el.content}</div>`;
+                    } else if (el.type === 'image') {
+                        const src = el.src?.startsWith('gen_img_') ? `courses/${getCourseId()}/media/${el.src}.png` : el.src;
+                        return `<div style="position:absolute; left:${el.left}px; top:${el.top}px; width:${el.width}px; height:${el.height}px; overflow:hidden;"><img src="${src}" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'"></div>`;
+                    } else if (el.type === 'shape') {
+                        return `<div style="position:absolute; left:${el.left}px; top:${el.top}px; width:${el.width}px; height:${el.height}px; background:${el.fill || 'transparent'};"></div>`;
+                    }
+                    return '';
+                }).join('');
+            }
+            
+            const bg = canvas.background || { type: 'solid', color: '#ffffff' };
+            let bgStyle = '';
+            if (bg.type === 'solid') bgStyle = `background:${bg.color};`;
+            else if (bg.type === 'image' && bg.image) bgStyle = `background:url(${bg.image.src}); background-size:cover;`;
+            else if (bg.type === 'gradient' && bg.gradient) {
+                const colors = bg.gradient.colors.map(c => c.color).join(', ');
+                bgStyle = `background:linear-gradient(${bg.gradient.angle || 90}deg, ${colors});`;
+            }
+            
+            return `
+                <div style="width:${viewportSize}px; height:${height}px; ${bgStyle} transform-origin:top left; transform:scale(calc(var(--slide-scale, 1))); position:relative; overflow:hidden;">
+                    ${elementsHtml}
+                </div>
+            `;
+        }
+        
+        // 渲染互动页面
+        function renderInteractive(scene) {
+            const html = scene.content?.html || '';
+            if (!html) return '<div class="error-state">互动内容缺失</div>';
+            
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            return `
+                <div class="slide-content interactive-mode" style="width:100%; height:100%;">
+                    <iframe src="${url}" style="width:100%; height:100%; border:none;" allowfullscreen></iframe>
+                </div>
+            `;
+        }
+        
+        // 渲染测验
+        function renderQuiz(scene) {
+            return `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:white; color:black; padding:2rem;">
+                    <h2>${scene.title || '知识测验'}</h2>
+                    <p style="margin-top:1rem; color:#666;">（测验内容开发中）</p>
+                </div>
+            `;
+        }
+        
+        // 预加载音频
+        function preloadAudio(scene) {
+            currentAudioFile = findAudioFile(scene);
+            
+            console.log('查找音频结果:', currentAudioFile);
+            console.log('当前场景:', scene.title, 'actions:', scene.actions);
+            
+            if (currentAudioFile) {
+                if (audioPlayer) {
+                    audioPlayer.pause();
+                    audioPlayer = null;
+                }
+                
+                console.log('创建音频对象:', currentAudioFile);
+                audioPlayer = new Audio(currentAudioFile);
+                
+                audioPlayer.onloadeddata = () => {
+                    console.log('音频加载成功:', currentAudioFile);
+                };
+                
+                audioPlayer.onended = () => {
+                    isPlaying = false;
+                    updatePlayButton();
+                };
+                
+                audioPlayer.onerror = (e) => {
+                    console.error('音频加载失败:', currentAudioFile, e);
+                    console.error('错误类型:', audioPlayer.error);
+                };
+                
+                // 预加载
+                audioPlayer.load();
+            } else {
+                console.log('当前场景没有音频文件');
+            }
+        }
+        
+        // 查找场景的音频文件
+        function findAudioFile(scene) {
+            if (!scene.actions) return null;
+            
+            for (const action of scene.actions) {
+                if (action.type === 'speech' && action.audioRef) {
+                    return `courses/${getCourseId()}/${action.audioRef}`;
+                }
+            }
+            return null;
+        }
+        
+        // 播放当前音频
+        function playCurrentAudio() {
+            if (!audioPlayer || !currentAudioFile) {
+                console.warn('没有音频可播放');
+                return;
+            }
+            
+            audioPlayer.play().catch(err => {
+                console.warn('播放失败:', err);
+                isPlaying = false;
+                updatePlayButton();
+                alert('音频播放失败: ' + err.message);
+            });
+        }
+        
+        // 切换播放/暂停
+        function togglePlay() {
+            if (!audioPlayer) {
+                console.warn('音频播放器未初始化');
+                alert('当前场景没有音频');
+                return;
+            }
+            
+            if (isPlaying) {
+                audioPlayer.pause();
+                isPlaying = false;
+            } else {
+                playCurrentAudio();
+                isPlaying = true;
+            }
+            updatePlayButton();
+        }
+        
+        // 更新播放按钮图标
+        function updatePlayButton() {
+            const btn = document.getElementById('playBtn');
+            btn.innerHTML = isPlaying ? '⏸' : '▶';
+        }
+        
+        // 切换静音
+        function toggleMute() {
+            isMuted = !isMuted;
+            if (audioPlayer) {
+                audioPlayer.muted = isMuted;
+            }
+            document.getElementById('muteBtn').innerHTML = isMuted ? '🔇' : '🔊';
+        }
+        
+        // 设置音量
+        function setVolume(value) {
+            if (audioPlayer) {
+                audioPlayer.volume = value / 100;
+            }
+        }
+        
+        // 更新进度
+        function updateProgress(index) {
+            const progress = scenes.length > 0 ? ((index + 1) / scenes.length) * 100 : 0;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('sceneCounter').textContent = `${index + 1} / ${scenes.length}`;
+            
+            if (audioPlayer && audioPlayer.duration) {
+                const current = formatTime(audioPlayer.currentTime);
+                const total = formatTime(audioPlayer.duration);
+                document.getElementById('timeDisplay').textContent = `${current} / ${total}`;
+            } else {
+                document.getElementById('timeDisplay').textContent = `场景 ${index + 1} / ${scenes.length}`;
+            }
+        }
+        
+        // 格式化时间
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // 音频时间更新
+        setInterval(() => {
+            if (audioPlayer && audioPlayer.duration) {
+                const current = formatTime(audioPlayer.currentTime);
+                const total = formatTime(audioPlayer.duration);
+                document.getElementById('timeDisplay').textContent = `${current} / ${total}`;
+                
+                const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                document.getElementById('progressBar').style.width = progress + '%';
+            }
+        }, 1000);
+        
+        // 导航
+        function prevScene() {
+            loadScene(currentScene - 1);
+        }
+        
+        function nextScene() {
+            loadScene(currentScene + 1);
+        }
+        
+        function goToScene(index) {
+            loadScene(index);
+        }
+        
+        // 获取课程 ID
+        function getCourseId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('course');
+            console.log('getCourseId 返回:', id);
+            return id;
+        }
+        
+        // 错误显示
+        function showError(message) {
+            document.getElementById('slideContent').innerHTML = `
+                <div class="error-state">
+                    <div style="font-size: 3rem;">⚠️</div>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+        
+        // 键盘导航
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') prevScene();
+            if (e.key === 'ArrowRight' || e.key === ' ') nextScene();
+        });
+        
+        // 初始化
+        init();
+    </script>
+</body>
+</html>

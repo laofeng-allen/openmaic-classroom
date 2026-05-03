@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课件上传 - 大白课堂</title>
+    <script src="config.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .upload-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px 28px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 96vh;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+        
+        .header h1 {
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            margin-bottom: 2px;
+        }
+        
+        .header p {
+            color: #888;
+            font-size: 0.8rem;
+        }
+        
+        .form-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        .row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .row .form-group {
+            flex: 1;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: #444;
+            font-size: 0.82rem;
+        }
+        
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: none;
+            height: 44px;
+        }
+        
+        .file-upload {
+            border: 1.5px dashed #ccc;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+            min-height: 72px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .file-upload input[type="file"] {
+            position: absolute; width: 100%; height: 100%;
+            top: 0; left: 0; opacity: 0; cursor: pointer;
+        }
+        
+        .file-upload-icon { font-size: 1.6rem; margin-bottom: 2px; }
+        .file-upload-text { color: #666; font-size: 0.78rem; }
+        .file-upload-hint { color: #aaa; font-size: 0.7rem; margin-top: 2px; }
+        
+        .file-list {
+            margin-top: 6px;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 8px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            font-size: 0.78rem;
+        }
+        
+        .file-item-name { color: #333; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-item-size { color: #999; font-size: 0.7rem; white-space: nowrap; }
+        .file-item-remove {
+            background: none; border: none; color: #bbb; cursor: pointer;
+            font-size: 1rem; padding: 0 2px; line-height: 1;
+        }
+        .file-item-remove:hover { color: #e74c3c; }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }
+        
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .progress-container {
+            display: none;
+            margin-top: 10px;
+            flex-shrink: 0;
+        }
+        .progress-container.active { display: block; }
+        
+        .progress-bar {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 4px;
+            color: #666;
+            font-size: 0.78rem;
+        }
+        
+        .success-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .success-overlay.active { display: flex; }
+        
+        .success-box {
+            background: white;
+            border-radius: 12px;
+            padding: 32px 40px;
+            text-align: center;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+            max-width: 320px;
+        }
+        
+        .success-box .icon { font-size: 3rem; margin-bottom: 8px; }
+        .success-box h3 { color: #155724; font-size: 1.1rem; margin-bottom: 6px; }
+        .success-box p { color: #555; font-size: 0.85rem; margin-bottom: 16px; }
+        .success-box a {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-card">
+        <div class="header">
+            <h1>📤 上传课件</h1>
+            <p>OpenMAIC 导出 → 上传 → 学生自动导入</p>
+        </div>
+        
+        <form id="uploadForm" class="form-body">
+            <div class="row">
+                <div class="form-group" style="flex: 2;">
+                    <label for="title">课件标题 *</label>
+                    <input type="text" id="title" name="title" required placeholder="例如：小学四年级科学 - 找重心实验">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="description">简介</label>
+                    <textarea id="description" name="description" placeholder="年级/学科..." rows="1"></textarea>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="form-group">
+                    <label>.maic.zip *</label>
+                    <div class="file-upload" id="maicZipDrop">
+                        <input type="file" id="maicZip" name="maicZip" accept=".maic.zip,.zip" required>
+                        <div class="file-upload-icon">📦</div>
+                        <div class="file-upload-text">点击上传 .maic.zip</div>
+                        <div class="file-upload-hint">课程结构 + 语音 + 媒体</div>
+                    </div>
+                    <div class="file-list" id="maicZipList"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>.zip（可选）</label>
+                    <div class="file-upload" id="resourceZipDrop">
+                        <input type="file" id="resourceZip" name="resourceZip" accept=".zip">
+                        <div class="file-upload-icon">🎒</div>
+                        <div class="file-upload-text">点击上传 .zip</div>
+                        <div class="file-upload-hint">互动页面（可选）</div>
+                    </div>
+                    <div class="file-list" id="resourceZipList"></div>
+                </div>
+            </div>
+        </form>
+        
+        <button type="submit" class="submit-btn" id="submitBtn" form="uploadForm">上传课件</button>
+        
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-text" id="progressText">准备上传...</div>
+        </div>
+    </div>
+    
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-box">
+            <div class="icon">✅</div>
+            <h3>上传成功！</h3>
+            <p>课件已发布到课堂列表</p>
+            <a href="/classroom/">去课堂列表</a>
+        </div>
+    </div>
+
+    <script>
+        function formatSize(bytes) {
+            if (bytes === 0) return '0B';
+            const k = 1024;
+            const sizes = ['B','KB','MB','GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + sizes[i];
+        }
+        
+        function handleFile(input, list) {
+            list.innerHTML = '';
+            for (const f of input.files) {
+                const el = document.createElement('div');
+                el.className = 'file-item';
+                el.innerHTML = `
+                    <span class="file-item-name">${f.name}</span>
+                    <span class="file-item-size">${formatSize(f.size)}</span>
+                    <button type="button" class="file-item-remove" onclick="this.parentElement.remove();document.getElementById('${input.id}').value=''">×</button>
+                `;
+                list.appendChild(el);
+            }
+        }
+        
+        function setupDrag(drop, input) {
+            drop.addEventListener('dragover', e => { e.preventDefault(); drop.style.borderColor = '#667eea'; drop.style.background = '#f8f9ff'; });
+            drop.addEventListener('dragleave', e => { e.preventDefault(); drop.style.borderColor = '#ccc'; drop.style.background = 'transparent'; });
+            drop.addEventListener('drop', e => {
+                e.preventDefault();
+                drop.style.borderColor = '#ccc'; drop.style.background = 'transparent';
+                if (e.dataTransfer.files.length) { input.files = e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+            });
+        }
+        
+        document.getElementById('maicZip').addEventListener('change', function() {
+            handleFile(this, document.getElementById('maicZipList'));
+        });
+        document.getElementById('resourceZip').addEventListener('change', function() {
+            handleFile(this, document.getElementById('resourceZipList'));
+        });
+        setupDrag(document.getElementById('maicZipDrop'), document.getElementById('maicZip'));
+        setupDrag(document.getElementById('resourceZipDrop'), document.getElementById('resourceZip'));
+        
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const prog = document.getElementById('progressContainer');
+            const fill = document.getElementById('progressFill');
+            const text = document.getElementById('progressText');
+            
+            btn.disabled = true;
+            prog.classList.add('active');
+            
+            let p = 0;
+            const iv = setInterval(() => {
+                p += Math.random() * 15;
+                if (p > 90) p = 90;
+                fill.style.width = p + '%';
+                text.textContent = `上传中 ${Math.round(p)}%...`;
+            }, 500);
+            
+            const fd = new FormData();
+            fd.append('title', document.getElementById('title').value);
+            fd.append('description', document.getElementById('description').value);
+            const m = document.getElementById('maicZip').files[0];
+            const r = document.getElementById('resourceZip').files[0];
+            if (m) fd.append('maicZip', m);
+            if (r) fd.append('resourceZip', r);
+            
+            fetch('/classroom/api/upload', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(d => {
+                    clearInterval(iv);
+                    fill.style.width = '100%';
+                    if (d.success) {
+                        text.textContent = '完成！';
+                        setTimeout(() => document.getElementById('successOverlay').classList.add('active'), 300);
+                    } else {
+                        text.textContent = '失败: ' + d.error;
+                        btn.disabled = false;
+                        btn.textContent = '重新上传';
+                    }
+                })
+                .catch(err => {
+                    clearInterval(iv);
+                    text.textContent = '失败: ' + err.message;
+                    btn.disabled = false;
+                    btn.textContent = '重新上传';
+                });
+        });
+    </script>
+</body>
+</html>
