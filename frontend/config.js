@@ -3,8 +3,9 @@
 
 const config = {
   // OpenMAIC 地址（用于自动导入）
+  // ⚠️ 请替换为你的实际 OpenMAIC 服务器地址
   // 示例: 'http://192.168.1.100:3000' 或 'https://openmaic.example.com'
-  OPENMAIC_URL: 'http://localhost:3000',
+  OPENMAIC_URL: 'http://YOUR_SERVER_IP:3000',
 
   // Classroom API 地址
   // 如果前端和后端在同一服务器，用当前域名即可

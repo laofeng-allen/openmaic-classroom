@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>课件上传 - 大白课堂</title>
-    <script src="config.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -140,7 +139,7 @@
             font-size: 0.78rem;
         }
         
-        .file-item-name { color: #333; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-item-name { color: #333; flex: 1; word-break: break-all; overflow-wrap: break-word; }
         .file-item-size { color: #999; font-size: 0.7rem; white-space: nowrap; }
         .file-item-remove {
             background: none; border: none; color: #bbb; cursor: pointer;
@@ -290,6 +289,7 @@
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script>
         function formatSize(bytes) {
             if (bytes === 0) return '0B';

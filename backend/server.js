@@ -6,8 +6,8 @@ const { exec } = require('child_process');
 
 // 配置（支持环境变量）
 const PORT = process.env.PORT || 5000;
-const UPLOAD_FOLDER = process.env.UPLOAD_FOLDER || '/home/lf/docker-data/classroom/courses';
-const DATA_FILE = process.env.DATA_FILE || '/home/lf/docker-data/classroom/data/courses.json';
+const UPLOAD_FOLDER = process.env.UPLOAD_FOLDER || './courses';
+const DATA_FILE = process.env.DATA_FILE || './data/courses.json';
 const TEMP_DIR = process.env.TEMP_DIR || '/tmp/classroom-upload';
 
 // 确保目录存在
